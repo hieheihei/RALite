@@ -192,7 +192,8 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
          vdbetrace.lo vdbevtab.lo \
          wal.lo walker.lo where.lo wherecode.lo whereexpr.lo \
-         window.lo utf.lo vtab.lo
+         window.lo utf.lo vtab.lo \
+	 rastatement.lo
 
 # Object files for the amalgamation.
 #
@@ -308,7 +309,9 @@ SRC = \
   $(TOP)/src/wherecode.c \
   $(TOP)/src/whereexpr.c \
   $(TOP)/src/whereInt.h \
-  $(TOP)/src/window.c
+  $(TOP)/src/window.c \
+  $(TOP)/src/rastatement.c \
+
 
 # Source code for extensions
 #
@@ -549,7 +552,8 @@ HDR = \
    $(TOP)/src/vdbeInt.h \
    $(TOP)/src/vxworks.h \
    $(TOP)/src/whereInt.h \
-   config.h
+   config.h \
+
 
 # Header files used by extensions
 #
@@ -1050,6 +1054,9 @@ tclsqlite3$(TEXE):	tclsqlite-shell.lo libsqlite3.la
 	$(LTLINK) -o $@ tclsqlite-shell.lo \
 		 libsqlite3.la $(LIBTCL)
 
+rastatement.lo:	$(TOP)/src/rastatement.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/rastatement.c
+
 # Rules to build opcodes.c and opcodes.h
 #
 opcodes.c:	opcodes.h $(TOP)/tool/mkopcodec.tcl
@@ -1500,3 +1507,12 @@ sqlite3.def: $(REAL_LIBOBJ)
 sqlite3.dll: $(REAL_LIBOBJ) sqlite3.def
 	$(TCC) -shared -o $@ sqlite3.def \
 		-Wl,"--strip-all" $(REAL_LIBOBJ)
+
+
+
+#
+# edited for RALITE
+#
+# rastatement.c 
+
+

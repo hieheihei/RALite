@@ -384,6 +384,8 @@ foreach file {
    whereexpr.c
    where.c
    window.c
+   
+  rastatement.c
 
    parse.c
 

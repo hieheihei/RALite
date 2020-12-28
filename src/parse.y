@@ -472,6 +472,36 @@ cmd ::= DROP VIEW ifexists(E) fullname(X). {
 }
 %endif  SQLITE_OMIT_VIEW
 
+//////////////////////// The RALITE statement /////////////////////////////////
+//
+
+cmd ::= racmd.
+
+racmd ::= RA_SELECT.{
+  raTest("RA_SELECT\n");
+}
+
+
+
+%token
+RA_SELECT
+RA_PROJECTION
+RA_UNION
+RA_DIFFER
+RA_PRODUCT
+RA_RENAME
+.
+
+
+
+
+
+
+
+
+
+
+
 //////////////////////// The SELECT statement /////////////////////////////////
 //
 cmd ::= select(X).  {

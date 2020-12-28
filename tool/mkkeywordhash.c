@@ -160,6 +160,10 @@ struct Keyword {
 #  define GENCOL 0x00200000
 #endif
 
+#  define RALITE_KEY_WORD 0x00400000
+
+
+
 /*
 ** These are the keywords
 */
@@ -309,6 +313,14 @@ static Keyword aKeywordTable[] = {
   { "WINDOW",           "TK_WINDOW",       WINDOWFUNC,       3      },
   { "WITH",             "TK_WITH",         CTE,              4      },
   { "WITHOUT",          "TK_WITHOUT",      ALWAYS,           1      },
+
+  {"RA_SELECT",    "TK_RA_SELECT",   RALITE_KEY_WORD, 1},
+  {"RA_PROJECTION",    "TK_RA_PROJECTION",   RALITE_KEY_WORD, 1},
+  {"RA_UNION",    "TK_RA_UNION",   RALITE_KEY_WORD, 1},
+  {"RA_DIFFER",    "TK_RA_DIFFER",   RALITE_KEY_WORD, 1},
+  {"RA_PRODUCT",    "TK_RA_PRODUCT",   RALITE_KEY_WORD, 1}, //笛卡尔积
+  {"RA_RENAME",    "TK_RA_RENAME",   RALITE_KEY_WORD, 1},
+
 };
 
 /* Number of keywords */

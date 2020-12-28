@@ -5002,4 +5002,14 @@ void sqlite3VectorErrorMsg(Parse*, Expr*);
 const char **sqlite3CompileOptions(int *pnOpt);
 #endif
 
+
+//edited for RALite
+
+void raTest(char * s);
+
+
+
+
+// end RALite
+
 #endif /* SQLITEINT_H */
