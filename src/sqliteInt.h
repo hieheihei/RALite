@@ -5005,10 +5005,13 @@ const char **sqlite3CompileOptions(int *pnOpt);
 
 //edited for RALite
 
-void raTest(char * s);
+void raExecutSelectCommand(Parse *pParse,Select * pselect);
 
+Select * raSelectRelationship(Parse *pParse,Token *pTable);
 
+Select* raCalculateProjectionOp(Parse *pParse,ExprList* pselcollist,Select* prelationshipR);
 
+Select* raCalculateSetOp(Parse *pParse,Select *pLhs,Select *pRhs,int setOp);
 
 // end RALite
 

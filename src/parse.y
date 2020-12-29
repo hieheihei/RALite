@@ -473,12 +473,67 @@ cmd ::= DROP VIEW ifexists(E) fullname(X). {
 %endif  SQLITE_OMIT_VIEW
 
 //////////////////////// The RALITE statement /////////////////////////////////
+//Relational algebra expression
+
+%type raExpFirst {Select*}
+%destructor raExpFirst {sqlite3SelectDelete(pParse->db, $$);}
+%type raExpSecond {Select*}
+%destructor raExpSecond {sqlite3SelectDelete(pParse->db, $$);}
+
+//////////////////////// cmd
 //
+cmd ::= raCmd.
 
-cmd ::= racmd.
+//////////////////////// raCmd
+//
+raCmd ::= raExpSecond(E).{
+  raExecutSelectCommand(pParse, E);
+}
 
-racmd ::= RA_SELECT.{
-  raTest("RA_SELECT\n");
+//////////////////////// raExpFirst
+//
+raExpFirst(E) ::= nm(N).{
+  E = raSelectRelationship(pParse,&N);
+}
+
+raExpFirst(A) ::= LP raExpSecond(B) RP.{
+  A = B;
+}
+
+raExpFirst(A) ::= RA_PROJECTION raSelcollist(B) LP  raExpSecond(C) RP.{
+  A = raCalculateProjectionOp(pParse,B,C);
+}
+
+//////////////////////// raExpSecond
+//
+raExpSecond(A) ::= raExpFirst(B).{
+  A = B;
+}
+
+raExpSecond(A) ::= raExpSecond(B) raSetOp(Y) raExpFirst(C).{
+  parserDoubleLinkSelect(pParse, C);
+  A = raCalculateSetOp(pParse,B,C,Y);
+}
+
+//////////////////////// assist
+//
+%type raSetOp {int}
+raSetOp(A) ::= RA_UNION.            {A = TK_UNION; }
+raSetOp(A) ::= RA_EXCEPT.           {A = TK_EXCEPT; }
+raSetOp(A) ::= RA_INTERSECT.    {A = TK_INTERSECT; }
+
+
+%type raSelcollist {ExprList*}
+%destructor raSelcollist {sqlite3ExprListDelete(pParse->db, $$);}
+%type raSclp {ExprList*}
+%destructor raSclp {sqlite3ExprListDelete(pParse->db, $$);}
+
+raSclp(A) ::= raSelcollist(A) COMMA.
+raSclp(A) ::= .                                {A = 0;}
+
+raSelcollist(A) ::= raSclp(A) scanpt(B) id(X) scanpt(Z).     {
+   A = sqlite3ExprListAppend(pParse, A, tokenExpr(pParse,TK_ID,X));
+   sqlite3ExprListSetSpan(pParse,A,B,Z);
 }
 
 
@@ -487,9 +542,10 @@ racmd ::= RA_SELECT.{
 RA_SELECT
 RA_PROJECTION
 RA_UNION
-RA_DIFFER
+RA_EXCEPT
 RA_PRODUCT
 RA_RENAME
+RA_INTERSECT
 .
 
 
