@@ -1,5 +1,40 @@
 #include "sqliteInt.h"
 
+static SrcList* subqueryFromSrc(Parse *pParse,Select* subquery){
+    Token nullAlias;
+    return sqlite3SrcListAppendFromTerm(
+        pParse,
+        0,
+        0,
+        0,
+        &nullAlias,
+        subquery,
+        0,
+        0);
+}
+
+static SrcList* twoSubqueryFromSrc(Parse *pParse,Select* subquery1,Select* subquery2){
+    Token nullAlias;
+    SrcList* psrc =  sqlite3SrcListAppendFromTerm(
+        pParse,
+        0,
+        0,
+        0,
+        &nullAlias,
+        subquery1,
+        0,
+        0);
+    return sqlite3SrcListAppendFromTerm(
+        pParse,
+        psrc,
+        0,
+        0,
+        &nullAlias,
+        subquery2,
+        0,
+        0);
+}
+
 void raExecutSelectCommand(Parse *pParse,Select * pselect){
     SelectDest dest = {SRT_Output, 0, 0, 0, 0, 0, 0};
     sqlite3Select(pParse, pselect, &dest);
@@ -17,30 +52,31 @@ Select * raSelectRelationship(Parse *pParse,Token *pTable){
 }
 
 /**
- * pi L(A)
+ * pi L(R)
  * select L from R
  * */
 Select* raCalculateProjectionOp(Parse *pParse,ExprList* pselcollist,Select* prelationshipR){
-    Token nullAlias;
-    SrcList* pSrc = sqlite3SrcListAppendFromTerm(
+    return sqlite3SelectNew(
         pParse,
-        0,
-        0,
-        0,
-        &nullAlias,
-        prelationshipR,
-        0,
-        0);
-    return sqlite3SelectNew(pParse,pselcollist,pSrc,0,0,0,0,SF_Distinct,0);
+        pselcollist,
+        subqueryFromSrc(pParse,prelationshipR),
+        0,0,0,0,SF_Distinct,0);
 }
 
 /**
- * sigma c(A)
- * 
+ * sigma c(R)
+ * select * from R where c
  * */
-// Select* raCalculateSelectOp(Parse *pParse,){
+Select* raCalculateSelectOp(Parse *pParse,Select* prelationshipR,Expr *pWhere){
+    ExprList* pselcollist = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(pParse->db, TK_ASTERISK, 0));
 
-// }
+     return sqlite3SelectNew(
+         pParse,
+          pselcollist,
+          subqueryFromSrc(pParse,prelationshipR),
+          pWhere,
+          0,0,0,SF_Distinct,0);
+}
 
 /**
  * R setOp S
@@ -66,5 +102,22 @@ Select* raCalculateSetOp(Parse *pParse,Select *pLhs,Select *pRhs,int setOp){
   }
   return pRhs;
 }
+
+/**
+ * R joinOp S
+ * select * from R joinOp S
+ * 
+ * */
+Select* raCalculateJoinOp(Parse *pParse,Select *pLhs,Select *pRhs,int joinType){
+    ExprList* pselcollist = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(pParse->db, TK_ASTERISK, 0));
+    SrcList* pSrc = twoSubqueryFromSrc(pParse,pLhs,pRhs);
+
+    if( ALWAYS(pSrc && pSrc->nSrc>0) ) {
+    pSrc->a[pSrc->nSrc-1].fg.jointype = (u8)joinType;
+    }
+
+    return sqlite3SelectNew(pParse,pselcollist,pSrc,0,0,0,0,SF_Distinct,0);
+}
+
 
 

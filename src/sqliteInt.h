@@ -5011,7 +5011,11 @@ Select * raSelectRelationship(Parse *pParse,Token *pTable);
 
 Select* raCalculateProjectionOp(Parse *pParse,ExprList* pselcollist,Select* prelationshipR);
 
+Select* raCalculateSelectOp(Parse *pParse,Select* prelationshipR,Expr *pWhere);
+
 Select* raCalculateSetOp(Parse *pParse,Select *pLhs,Select *pRhs,int setOp);
+
+Select* raCalculateJoinOp(Parse *pParse,Select *pLhs,Select *pRhs,int joinType);
 
 // end RALite
 

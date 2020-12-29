@@ -504,6 +504,11 @@ raExpFirst(A) ::= RA_PROJECTION raSelcollist(B) LP  raExpSecond(C) RP.{
   A = raCalculateProjectionOp(pParse,B,C);
 }
 
+// TODO "RA_DELIMITER"!
+raExpFirst(A) ::= RA_SELECT expr(B) RA_DELIMITER  raExpSecond(C) RA_DELIMITER.{
+  A = raCalculateSelectOp(pParse,C,B);
+}
+
 //////////////////////// raExpSecond
 //
 raExpSecond(A) ::= raExpFirst(B).{
@@ -514,6 +519,11 @@ raExpSecond(A) ::= raExpSecond(B) raSetOp(Y) raExpFirst(C).{
   parserDoubleLinkSelect(pParse, C);
   A = raCalculateSetOp(pParse,B,C,Y);
 }
+
+raExpSecond(A) ::= raExpSecond(B) raJoinOp(Y) raExpFirst(C).{
+  A = raCalculateJoinOp(pParse,B,C,Y);
+}
+
 
 //////////////////////// assist
 //
@@ -536,16 +546,20 @@ raSelcollist(A) ::= raSclp(A) scanpt(B) id(X) scanpt(Z).     {
    sqlite3ExprListSetSpan(pParse,A,B,Z);
 }
 
+%type raJoinOp {int}
+raJoinOp(X) ::= RA_INNER_JOIN.         { X = JT_INNER; }
+raJoinOp(X) ::= RA_NATURE_JOIN.     { X = JT_NATURAL;}
+raJoinOp(X) ::= RA_LEFT_JOIN.            { X = JT_LEFT;}
 
+//SQLite 不支持
+//  raJoinOp(X) ::= RA_RIGHT_JOIN.         { X = JT_RIGHT;}
+//  raJoinOp(X) ::= RA_OUTER_JOIN.       { X = JT_OUTER;}
 
 %token
-RA_SELECT
-RA_PROJECTION
-RA_UNION
-RA_EXCEPT
-RA_PRODUCT
 RA_RENAME
-RA_INTERSECT
+RA_DELIMITER
+RA_RIGHT_JOIN
+RA_OUTER_JOIN
 .
 
 
