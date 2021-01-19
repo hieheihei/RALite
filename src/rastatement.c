@@ -119,5 +119,19 @@ Select* raCalculateJoinOp(Parse *pParse,Select *pLhs,Select *pRhs,int joinType){
     return sqlite3SelectNew(pParse,pselcollist,pSrc,0,0,0,0,SF_Distinct,0);
 }
 
+/**
+ * R joinOp S
+ * select * from R joinOp S
+ * 
+ * */
+Select* raCalculateJoinOpWithCondition(Parse *pParse,Select *pLhs,Select *pRhs,int joinType,Expr* pwhereOpt){
+    ExprList* pselcollist = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(pParse->db, TK_ASTERISK, 0));
+    SrcList* pSrc = twoSubqueryFromSrc(pParse,pLhs,pRhs);
 
+    if( ALWAYS(pSrc && pSrc->nSrc>0) ) {
+    pSrc->a[pSrc->nSrc-1].fg.jointype = (u8)joinType;
+    }
+
+    return sqlite3SelectNew(pParse,pselcollist,pSrc,pwhereOpt,0,0,0,SF_Distinct,0);
+}
 
