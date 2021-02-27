@@ -509,7 +509,8 @@ raExpFirst(A) ::= RA_PROJECTION raSelcollist(B) LP  raExpSecond(C) RP.{
 //   A = raCalculateSelectOp(pParse,C,B);
 // }
 
-raExpFirst(A) ::= RA_SELECT expr(B) LP nm(N) RP.{
+raExpFirst(A) ::= RA_SELECT ra_expr(B) LP nm(N) RP.{
+  Select* C;
   C = raSelectRelationship(pParse,&N);
   A = raCalculateSelectOp(pParse,C,B);
 }
@@ -1430,6 +1431,57 @@ nexprlist(A) ::= expr(Y).
 paren_exprlist(A) ::= .   {A = 0;}
 paren_exprlist(A) ::= LP exprlist(X) RP.  {A = X;}
 %endif SQLITE_OMIT_SUBQUERY
+
+
+///////////////////////////// RA_EXPR //////////////////////////////////////////////////
+//
+%type ra_expr {Expr*}
+%destructor ra_expr {sqlite3ExprDelete(pParse->db, $$);}
+
+ra_expr(A) ::= term(A).
+ra_expr(A) ::= LP ra_expr(X) RP. {A = X;}
+ra_expr(A) ::= id(X).          {A=tokenExpr(pParse,TK_ID,X); /*A-overwrites-X*/}
+ra_expr(A) ::= JOIN_KW(X).     {A=tokenExpr(pParse,TK_ID,X); /*A-overwrites-X*/}
+
+ra_expr(A) ::= nm(X) DOT nm(Y). {
+  Expr *temp1 = sqlite3ExprAlloc(pParse->db, TK_ID, &X, 1);
+  Expr *temp2 = sqlite3ExprAlloc(pParse->db, TK_ID, &Y, 1);
+  if( IN_RENAME_OBJECT ){
+    sqlite3RenameTokenMap(pParse, (void*)temp2, &Y);
+    sqlite3RenameTokenMap(pParse, (void*)temp1, &X);
+  }
+  A = sqlite3PExpr(pParse, TK_DOT, temp1, temp2);
+}
+
+ra_expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
+  Expr *temp1 = sqlite3ExprAlloc(pParse->db, TK_ID, &X, 1);
+  Expr *temp2 = sqlite3ExprAlloc(pParse->db, TK_ID, &Y, 1);
+  Expr *temp3 = sqlite3ExprAlloc(pParse->db, TK_ID, &Z, 1);
+  Expr *temp4 = sqlite3PExpr(pParse, TK_DOT, temp2, temp3);
+  if( IN_RENAME_OBJECT ){
+    sqlite3RenameTokenMap(pParse, (void*)temp3, &Z);
+    sqlite3RenameTokenMap(pParse, (void*)temp2, &Y);
+  }
+  A = sqlite3PExpr(pParse, TK_DOT, temp1, temp4);
+}
+
+ra_expr(A) ::= ra_expr(A) AND ra_expr(Y).        {A=sqlite3ExprAnd(pParse,A,Y);}
+ra_expr(A) ::= ra_expr(A) OR(OP) ra_expr(Y).     {A=sqlite3PExpr(pParse,@OP,A,Y);}
+ra_expr(A) ::= ra_expr(A) LT|GT|GE|LE(OP) ra_expr(Y).
+                                        {A=sqlite3PExpr(pParse,@OP,A,Y);}
+ra_expr(A) ::= ra_expr(A) EQ|NE(OP) ra_expr(Y).  {A=sqlite3PExpr(pParse,@OP,A,Y);}
+ra_expr(A) ::= ra_expr(A) BITAND|BITOR|LSHIFT|RSHIFT(OP) ra_expr(Y).
+                                        {A=sqlite3PExpr(pParse,@OP,A,Y);}
+ra_expr(A) ::= ra_expr(A) PLUS|MINUS(OP) ra_expr(Y).
+                                        {A=sqlite3PExpr(pParse,@OP,A,Y);}
+ra_expr(A) ::= ra_expr(A) STAR|SLASH|REM(OP) ra_expr(Y).
+                                        {A=sqlite3PExpr(pParse,@OP,A,Y);}
+ra_expr(A) ::= ra_expr(A) CONCAT(OP) ra_expr(Y). {A=sqlite3PExpr(pParse,@OP,A,Y);}
+
+
+//
+/////////////////////////////////// END RA_EXPR
+
 
 
 ///////////////////////////// The CREATE INDEX command ///////////////////////
