@@ -505,7 +505,12 @@ raExpFirst(A) ::= RA_PROJECTION raSelcollist(B) LP  raExpSecond(C) RP.{
 }
 
 // TODO "RA_DELIMITER"!
-raExpFirst(A) ::= RA_SELECT expr(B) RA_DELIMITER  raExpSecond(C) RA_DELIMITER.{
+// raExpFirst(A) ::= RA_SELECT expr(B) RA_DELIMITER  raExpSecond(C) RA_DELIMITER.{
+//   A = raCalculateSelectOp(pParse,C,B);
+// }
+
+raExpFirst(A) ::= RA_SELECT expr(B) LP nm(N) RP.{
+  C = raSelectRelationship(pParse,&N);
   A = raCalculateSelectOp(pParse,C,B);
 }
 

@@ -14,7 +14,7 @@ static SrcList* subqueryFromSrc(Parse *pParse,Select* subquery){
 }
 
 static SrcList* twoSubqueryFromSrc(Parse *pParse,Select* subquery1,Select* subquery2){
-    Token nullAlias;
+    Token nullAlias = {0,0};
     SrcList* psrc =  sqlite3SrcListAppendFromTerm(
         pParse,
         0,
