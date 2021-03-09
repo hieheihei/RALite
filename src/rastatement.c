@@ -1,7 +1,7 @@
 #include "sqliteInt.h"
 
 static SrcList* subqueryFromSrc(Parse *pParse,Select* subquery){
-    Token nullAlias;
+    Token nullAlias = {0,0};
     return sqlite3SrcListAppendFromTerm(
         pParse,
         0,
