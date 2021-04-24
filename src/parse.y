@@ -504,8 +504,12 @@ raExpFirst(A) ::= RA_PROJECTION raSelcollist(B) LP  raExpSecond(C) RP.{
   A = raCalculateProjectionOp(pParse,B,C);
 }
 
-raExpFirst(A) ::= RA_SELECT ra_expr(B) LP raExpSecond(C) RP.{
+raExpFirst(A) ::= RA_SELECT raExpr(B) LP raExpSecond(C) RP.{
   A = raCalculateSelectOp(pParse,C,B);
+}
+
+raExpFirst(A) ::= RA_GROUP  exprlist(B) SEMI selcollist(C) SEMI LP raExpSecond(D) RP.{
+  A = raCalculateGroupOp(pParse,C,D,B);
 }
 
 //////////////////////// raExpSecond
@@ -521,6 +525,10 @@ raExpSecond(A) ::= raExpSecond(B) raSetOp(Y) raExpFirst(C).{
 
 raExpSecond(A) ::= raExpSecond(B) raJoinOp(Y) raExpFirst(C).{
   A = raCalculateJoinOp(pParse,B,C,Y);
+}
+
+raExpSecond(A) ::= raExpSecond(B) RA_SITA_JOIN LP raExpr(E) RP raExpFirst(C).{
+  A = raCalculateSitaJoinOp(pParse,B,C,E);
 }
 
 
@@ -547,7 +555,7 @@ raSelcollist(A) ::= raSclp(A) scanpt(B) id(X) scanpt(Z).     {
 
 %type raJoinOp {int}
 raJoinOp(X) ::= RA_INNER_JOIN.         { X = JT_INNER; }
-raJoinOp(X) ::= RA_NATURE_JOIN.     { X = JT_NATURAL;}
+raJoinOp(X) ::= RA_NATURAL_JOIN.     { X = JT_NATURAL;}
 raJoinOp(X) ::= RA_LEFT_JOIN.            { X = JT_LEFT;}
 
 //SQLite 不支持
@@ -556,7 +564,6 @@ raJoinOp(X) ::= RA_LEFT_JOIN.            { X = JT_LEFT;}
 
 %token
 RA_RENAME
-RA_DELIMITER
 RA_RIGHT_JOIN
 RA_OUTER_JOIN
 .
@@ -1426,17 +1433,17 @@ paren_exprlist(A) ::= LP exprlist(X) RP.  {A = X;}
 %endif SQLITE_OMIT_SUBQUERY
 
 
-///////////////////////////// RA_EXPR //////////////////////////////////////////////////
+///////////////////////////// raExpr //////////////////////////////////////////////////
 //
-%type ra_expr {Expr*}
-%destructor ra_expr {sqlite3ExprDelete(pParse->db, $$);}
+%type raExpr {Expr*}
+%destructor raExpr {sqlite3ExprDelete(pParse->db, $$);}
 
-ra_expr(A) ::= term(A).
-ra_expr(A) ::= LP ra_expr(X) RP. {A = X;}
-ra_expr(A) ::= id(X).          {A=tokenExpr(pParse,TK_ID,X); /*A-overwrites-X*/}
-ra_expr(A) ::= JOIN_KW(X).     {A=tokenExpr(pParse,TK_ID,X); /*A-overwrites-X*/}
+raExpr(A) ::= term(A).
+raExpr(A) ::= LP raExpr(X) RP. {A = X;}
+raExpr(A) ::= id(X).          {A=tokenExpr(pParse,TK_ID,X); /*A-overwrites-X*/}
+raExpr(A) ::= JOIN_KW(X).     {A=tokenExpr(pParse,TK_ID,X); /*A-overwrites-X*/}
 
-ra_expr(A) ::= nm(X) DOT nm(Y). {
+raExpr(A) ::= nm(X) DOT nm(Y). {
   Expr *temp1 = sqlite3ExprAlloc(pParse->db, TK_ID, &X, 1);
   Expr *temp2 = sqlite3ExprAlloc(pParse->db, TK_ID, &Y, 1);
   if( IN_RENAME_OBJECT ){
@@ -1446,7 +1453,7 @@ ra_expr(A) ::= nm(X) DOT nm(Y). {
   A = sqlite3PExpr(pParse, TK_DOT, temp1, temp2);
 }
 
-ra_expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
+raExpr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
   Expr *temp1 = sqlite3ExprAlloc(pParse->db, TK_ID, &X, 1);
   Expr *temp2 = sqlite3ExprAlloc(pParse->db, TK_ID, &Y, 1);
   Expr *temp3 = sqlite3ExprAlloc(pParse->db, TK_ID, &Z, 1);
@@ -1458,18 +1465,18 @@ ra_expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
   A = sqlite3PExpr(pParse, TK_DOT, temp1, temp4);
 }
 
-ra_expr(A) ::= ra_expr(A) AND ra_expr(Y).        {A=sqlite3ExprAnd(pParse,A,Y);}
-ra_expr(A) ::= ra_expr(A) OR(OP) ra_expr(Y).     {A=sqlite3PExpr(pParse,@OP,A,Y);}
-ra_expr(A) ::= ra_expr(A) LT|GT|GE|LE(OP) ra_expr(Y).
+raExpr(A) ::= raExpr(A) AND raExpr(Y).        {A=sqlite3ExprAnd(pParse,A,Y);}
+raExpr(A) ::= raExpr(A) OR(OP) raExpr(Y).     {A=sqlite3PExpr(pParse,@OP,A,Y);}
+raExpr(A) ::= raExpr(A) LT|GT|GE|LE(OP) raExpr(Y).
                                         {A=sqlite3PExpr(pParse,@OP,A,Y);}
-ra_expr(A) ::= ra_expr(A) EQ|NE(OP) ra_expr(Y).  {A=sqlite3PExpr(pParse,@OP,A,Y);}
-ra_expr(A) ::= ra_expr(A) BITAND|BITOR|LSHIFT|RSHIFT(OP) ra_expr(Y).
+raExpr(A) ::= raExpr(A) EQ|NE(OP) raExpr(Y).  {A=sqlite3PExpr(pParse,@OP,A,Y);}
+raExpr(A) ::= raExpr(A) BITAND|BITOR|LSHIFT|RSHIFT(OP) raExpr(Y).
                                         {A=sqlite3PExpr(pParse,@OP,A,Y);}
-ra_expr(A) ::= ra_expr(A) PLUS|MINUS(OP) ra_expr(Y).
+raExpr(A) ::= raExpr(A) PLUS|MINUS(OP) raExpr(Y).
                                         {A=sqlite3PExpr(pParse,@OP,A,Y);}
-ra_expr(A) ::= ra_expr(A) STAR|SLASH|REM(OP) ra_expr(Y).
+raExpr(A) ::= raExpr(A) STAR|SLASH|REM(OP) raExpr(Y).
                                         {A=sqlite3PExpr(pParse,@OP,A,Y);}
-ra_expr(A) ::= ra_expr(A) CONCAT(OP) ra_expr(Y). {A=sqlite3PExpr(pParse,@OP,A,Y);}
+raExpr(A) ::= raExpr(A) CONCAT(OP) raExpr(Y). {A=sqlite3PExpr(pParse,@OP,A,Y);}
 
 
 //

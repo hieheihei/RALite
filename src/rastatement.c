@@ -79,6 +79,22 @@ Select* raCalculateSelectOp(Parse *pParse,Select* prelationshipR,Expr *pWhere){
 }
 
 /**
+ * gama L;agg(R)
+ * select agg from R group by L
+ * */
+Select* raCalculateGroupOp(Parse *pParse,ExprList* pselcollist,Select* prelationshipR,ExprList *pGroupBy){
+    return sqlite3SelectNew(
+        pParse,
+        pselcollist,
+        subqueryFromSrc(pParse,prelationshipR),
+        0,
+        pGroupBy,
+        0,
+        0,
+        SF_Distinct,0);
+}
+
+/**
  * R setOp S
  * setOp : UNION | EXCEP | INTERSECT
  * 
@@ -117,6 +133,22 @@ Select* raCalculateJoinOp(Parse *pParse,Select *pLhs,Select *pRhs,int joinType){
     }
 
     return sqlite3SelectNew(pParse,pselcollist,pSrc,0,0,0,0,SF_Distinct,0);
+}
+
+/**
+ * R sitaJoinOp condition S
+ * select * from R natural join S on condition
+ * 
+ * */
+Select* raCalculateSitaJoinOp(Parse *pParse,Select *pLhs,Select *pRhs,Expr *pWhere){
+    ExprList* pselcollist = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(pParse->db, TK_ASTERISK, 0));
+    SrcList* pSrc = twoSubqueryFromSrc(pParse,pLhs,pRhs);
+
+    if( ALWAYS(pSrc && pSrc->nSrc>0) ) {
+    pSrc->a[pSrc->nSrc-1].fg.jointype = (u8)JT_NATURAL;
+    }
+
+    return sqlite3SelectNew(pParse,pselcollist,pSrc,pWhere,0,0,0,SF_Distinct,0);
 }
 
 /**

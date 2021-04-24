@@ -5019,6 +5019,8 @@ Select* raCalculateJoinOp(Parse *pParse,Select *pLhs,Select *pRhs,int joinType);
 
 Select* raCalculateJoinOpWithCondition(Parse *pParse,Select *pLhs,Select *pRhs,int joinType,Expr* pwhereOpt);
 
+Select* raCalculateSitaJoinOp(Parse *pParse,Select *pLhs,Select *pRhs,Expr *pWhere);
+
 // end RALite
 
 #endif /* SQLITEINT_H */
