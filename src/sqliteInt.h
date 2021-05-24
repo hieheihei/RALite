@@ -5021,6 +5021,8 @@ Select* raCalculateJoinOpWithCondition(Parse *pParse,Select *pLhs,Select *pRhs,i
 
 Select* raCalculateSitaJoinOp(Parse *pParse,Select *pLhs,Select *pRhs,Expr *pWhere);
 
+Select* raDistinctOp(Parse *pParse,Select* prelationshipR);
+
 // end RALite
 
 #endif /* SQLITEINT_H */

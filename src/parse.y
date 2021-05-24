@@ -487,7 +487,8 @@ cmd ::= raCmd.
 //////////////////////// raCmd
 //
 raCmd ::= raExpSecond(E).{
-  raExecutSelectCommand(pParse, E);
+  Select* D = raDistinctOp(pParse, E);
+  raExecutSelectCommand(pParse, D);
 }
 
 //////////////////////// raExpFirst

@@ -41,6 +41,15 @@ void raExecutSelectCommand(Parse *pParse,Select * pselect){
     sqlite3SelectDelete(pParse->db, pselect);
 }
 
+Select* raDistinctOp(Parse *pParse,Select* prelationshipR){
+    ExprList* pselcollist = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(pParse->db, TK_ASTERISK, 0));
+    return sqlite3SelectNew(
+        pParse,
+        pselcollist,
+        subqueryFromSrc(pParse,prelationshipR),
+        0,0,0,0,SF_Distinct,0);
+}
+
 /**
  * R
  * select * from R
@@ -48,7 +57,7 @@ void raExecutSelectCommand(Parse *pParse,Select * pselect){
 Select * raSelectRelationship(Parse *pParse,Token *pTable){
     ExprList* pselcollist = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(pParse->db, TK_ASTERISK, 0));
     SrcList* pSrc = sqlite3SrcListAppend(pParse,0,pTable,0);
-    return sqlite3SelectNew(pParse,pselcollist,pSrc,0,0,0,0,SF_Distinct,0);
+    return sqlite3SelectNew(pParse,pselcollist,pSrc,0,0,0,0,0,0);
 }
 
 /**
@@ -60,7 +69,7 @@ Select* raCalculateProjectionOp(Parse *pParse,ExprList* pselcollist,Select* prel
         pParse,
         pselcollist,
         subqueryFromSrc(pParse,prelationshipR),
-        0,0,0,0,SF_Distinct,0);
+        0,0,0,0,0,0);
 }
 
 /**
@@ -75,7 +84,7 @@ Select* raCalculateSelectOp(Parse *pParse,Select* prelationshipR,Expr *pWhere){
           pselcollist,
           subqueryFromSrc(pParse,prelationshipR),
           pWhere,
-          0,0,0,SF_Distinct,0);
+          0,0,0,0,0);
 }
 
 /**
@@ -91,7 +100,7 @@ Select* raCalculateGroupOp(Parse *pParse,ExprList* pselcollist,Select* prelation
         pGroupBy,
         0,
         0,
-        SF_Distinct,0);
+        0,0);
 }
 
 /**
@@ -132,7 +141,7 @@ Select* raCalculateJoinOp(Parse *pParse,Select *pLhs,Select *pRhs,int joinType){
     pSrc->a[pSrc->nSrc-1].fg.jointype = (u8)joinType;
     }
 
-    return sqlite3SelectNew(pParse,pselcollist,pSrc,0,0,0,0,SF_Distinct,0);
+    return sqlite3SelectNew(pParse,pselcollist,pSrc,0,0,0,0,0,0);
 }
 
 /**
@@ -148,7 +157,7 @@ Select* raCalculateSitaJoinOp(Parse *pParse,Select *pLhs,Select *pRhs,Expr *pWhe
     pSrc->a[pSrc->nSrc-1].fg.jointype = (u8)JT_NATURAL;
     }
 
-    return sqlite3SelectNew(pParse,pselcollist,pSrc,pWhere,0,0,0,SF_Distinct,0);
+    return sqlite3SelectNew(pParse,pselcollist,pSrc,pWhere,0,0,0,0,0);
 }
 
 /**
@@ -164,6 +173,6 @@ Select* raCalculateJoinOpWithCondition(Parse *pParse,Select *pLhs,Select *pRhs,i
     pSrc->a[pSrc->nSrc-1].fg.jointype = (u8)joinType;
     }
 
-    return sqlite3SelectNew(pParse,pselcollist,pSrc,pwhereOpt,0,0,0,SF_Distinct,0);
+    return sqlite3SelectNew(pParse,pselcollist,pSrc,pwhereOpt,0,0,0,0,0);
 }
 
